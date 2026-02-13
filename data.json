@@ -1,0 +1,36 @@
+{
+    "auto_role_id": "1468167379123961876",
+    "staff_role_id": "1468930328394465371",
+    "ticket_category_id": null,
+    "logs_channel_id": "1468929977838866502",
+    "sales_channel_id": "1468929977838866502",
+    "users": {
+        "1433973291063840809": {
+            "products": [
+                {
+                    "name": "VS Bypass (Advanced)",
+                    "duration": "Liketime",
+                    "date": "05/02/2026"
+                }
+            ]
+        }
+    },
+    "ticket_count": 17,
+    "guilds": {
+        "1471279007571116106": {
+            "ticket_channel_id": "1471552599952982017",
+            "welcome_channel_id": "1471552537680416838",
+            "auto_role_id": "1471559647981998120",
+            "staff_role_id": "1471559644219572246",
+            "client_role_id": "1471559646639558747",
+            "plan_role_ids": {
+                "opt_basic": "1471559649038827530",
+                "opt_turbo": "1471559649990938877",
+                "opt_advanced": "1471559651064807530",
+                "opt_pro": "1471559652000006310",
+                "opt_notebook": "1471559653019226374"
+            },
+            "results_channel_id": "1471552624057651361"
+        }
+    }
+}
