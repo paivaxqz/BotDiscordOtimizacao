@@ -22,6 +22,7 @@ const {
 } = require('discord.js');
 const db = require('../database'); // Import Database
 const { generateServerStructure } = require('../ai_server_gen.js'); // Import AI Module
+const { beautify } = require('../utils/hardwareBeautifier'); // Import Hardware Beautifier
 
 // Store for Embed Builder drafts (in-memory for simplicity)
 const embedDrafts = new Map();
@@ -1748,9 +1749,13 @@ line_gif -> Separador de linha colorido`;
                     'opt_advanced': { name: 'Otimização Avançada', price: 79.90, short: 'avançada' },
                     'opt_pro': { name: 'Pro & Streamer', price: 120.00, short: 'pro' },
                     'opt_notebook': { name: 'Plus Notebook', price: 89.90, short: 'notebook' },
-                    'opt_support': { name: 'Suporte / Dúvidas', price: 0, short: 'suporte' }
+                    'opt_support': { name: 'Suporte / Dúvidas', price: 0, short: 'suporte' },
+                    'tech_support': { name: 'Suporte Técnico', price: 0, short: 'suporte' },
+                    'finance': { name: 'Financeiro', price: 0, short: 'financeiro' },
+                    'general': { name: 'Dúvidas Gerais', price: 0, short: 'duvidas' },
+                    'report': { name: 'Denúncia', price: 0, short: 'denuncia' }
                 };
-                const plan = planMap[categoryValue];
+                const plan = planMap[categoryValue] || planMap['opt_support'];
                 const channelName = `${plan.short}-${interaction.user.username}`.toLowerCase().slice(0, 32);
 
                 const permissionOverwrites = [
@@ -1775,9 +1780,10 @@ line_gif -> Separador de linha colorido`;
                 }
 
                 // --- 1.3 MENSAGEM DE BOAS-VINDAS (V2) ---
-                const welcomeContainer = new ContainerBuilder()
-                    .setAccentColor(0x512DA8)
-                    .addTextDisplayComponents(
+                const welcomeContainer = new ContainerBuilder().setAccentColor(0x512DA8);
+
+                if (plan.price > 0) {
+                    welcomeContainer.addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`# 👋 Atendimento Iniciado`),
                         new TextDisplayBuilder().setContent(`Olá ${interaction.user.toString()}, seu ticket de **${plan.name}** foi aberto com sucesso!\n\n` +
                             `Nossa equipe já foi notificada e em breve um especialista irá te atender.\n\n` +
@@ -1786,6 +1792,16 @@ line_gif -> Separador de linha colorido`;
                             `> Se tiver dúvidas sobre o pagamento, pode perguntar aqui mesmo.`),
                         new TextDisplayBuilder().setContent(`${emojiMemberText} **Status do Atendimento:**\n\`Aguardando Staff...\``)
                     );
+                } else {
+                    welcomeContainer.addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`# 🛠️ Suporte / Atendimento`),
+                        new TextDisplayBuilder().setContent(`Olá ${interaction.user.toString()}, você abriu um ticket para **${plan.name}**.\n\n` +
+                            `Um membro da nossa equipe de suporte entrará em contato em breve.\n\n` +
+                            `> 📝 **Como podemos ajudar?**\n` +
+                            `> Por favor, descreva sua dúvida ou problema com o máximo de detalhes possível.`),
+                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Status:**\n\`Aguardando Staff...\``)
+                    );
+                }
 
                 const innerMenu = new StringSelectMenuBuilder().setCustomId('ticket_inner_options').setPlaceholder('Selecione um painel')
                     .addOptions(
@@ -1800,6 +1816,28 @@ line_gif -> Separador de linha colorido`;
 
                 welcomeContainer.addActionRowComponents(new ActionRowBuilder().addComponents(innerMenu), btnRow);
                 await ticketChannel.send({ flags: MessageFlags.IsComponentsV2, components: [welcomeContainer] });
+
+                // --- 1.3.1 HARDWARE COLLECTOR (IF OPTIMIZATION) ---
+                if (plan.price > 0) {
+                    const filter = m => m.author.id === interaction.user.id;
+                    const collector = ticketChannel.createMessageCollector({ filter, max: 1, time: 300000 });
+
+                    collector.on('collect', async m => {
+                        const beautified = beautify(m.content);
+                        const confirmContainer = new ContainerBuilder()
+                            .setAccentColor(0x5865F2)
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(`🤖 **IA IDENTIFICOU SEU PC!**`),
+                                new TextDisplayBuilder().setContent(`Pelo que você mandou, identifiquei esses componentes:\n\n**${beautified}**`),
+                                new TextDisplayBuilder().setContent(`Acertei? Clique no botão abaixo para confirmar ou corrigir.`)
+                            );
+                        const row = new ActionRowBuilder().addComponents(
+                            new ButtonBuilder().setCustomId(`confirm_specs_ok_${beautified}`).setLabel('Sim, está correto ✅').setStyle(ButtonStyle.Success),
+                            new ButtonBuilder().setCustomId('edit_specs_retry').setLabel('Não, quero corrigir ✏️').setStyle(ButtonStyle.Secondary)
+                        );
+                        await m.reply({ flags: MessageFlags.IsComponentsV2, components: [confirmContainer, row] });
+                    });
+                }
 
                 // --- 1.4 NOTIFICAÇÃO DO DONO ---
                 try {
