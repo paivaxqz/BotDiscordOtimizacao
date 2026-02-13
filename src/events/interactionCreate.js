@@ -21,7 +21,7 @@ const {
     MediaGalleryItemBuilder
 } = require('discord.js');
 const db = require('../database'); // Import Database
-const { generateServerStructure } = require('../ai_server_gen'); // Import AI Module
+const { generateServerStructure } = require('../ai_server_gen.js'); // Import AI Module
 
 // Store for Embed Builder drafts (in-memory for simplicity)
 const embedDrafts = new Map();
