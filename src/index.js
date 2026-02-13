@@ -46,6 +46,21 @@ client.login(process.env.DISCORD_TOKEN).then(async () => {
         } catch (err) {
             console.error(`[ERRO] Falha ao carregar convites para ${guild.name}:`, err.message);
         }
+
+        // Arrumar hierarquia automaticamente (Sidebar Setup)
+        try {
+            const roles = await guild.roles.fetch();
+            let hCount = 0;
+            for (const [, role] of roles) {
+                if (!role.managed && role.name !== '@everyone' && !role.hoist) {
+                    await role.edit({ hoist: true }).catch(() => { });
+                    hCount++;
+                }
+            }
+            if (hCount > 0) console.log(`[HIERARQUIA] ${hCount} cargos organizados em: ${guild.name}`);
+        } catch (err) {
+            console.error(`[ERRO] Falha ao organizar cargos em ${guild.name}:`, err.message);
+        }
     }
 }).catch(err => {
     console.error("Erro ao logar:", err);
