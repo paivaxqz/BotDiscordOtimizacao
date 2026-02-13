@@ -172,8 +172,8 @@ module.exports = {
                             new StringSelectMenuOptionBuilder().setLabel('Definir Canal Logs').setValue('set_logschannel').setDescription('Canal de transcripts.').setEmoji(emojiBellId),
                             new StringSelectMenuOptionBuilder().setLabel('Definir Canal Vendas').setValue('set_saleschannel').setDescription('Onde ficam os comprovantes.').setEmoji('💰'),
                             new StringSelectMenuOptionBuilder().setLabel('Definir Canal Boas-vindas').setValue('set_welcomechannel').setDescription('Onde avisar novos membros.').setEmoji('👋'),
-                            new StringSelectMenuOptionBuilder().setLabel('Definir Canal Resultados').setValue('set_resultschannel').setEmoji('📊'),
                             new StringSelectMenuOptionBuilder().setLabel('Editar Mensagem Boas-vindas').setValue('edit_welcome').setEmoji('📝'),
+                            new StringSelectMenuOptionBuilder().setLabel('Organizar Cargos (Sidebar)').setValue('fix_hierarchy').setDescription('Exibir cargos na lateral separadamente.').setEmoji('👑'),
                             new StringSelectMenuOptionBuilder().setLabel('Enviar Painel Ticket').setValue('send_ticket_panel').setDescription('Enviar painel neste canal.').setEmoji(emojiBellId)
                         );
 
@@ -1079,7 +1079,12 @@ module.exports = {
                     if (structure.roles) {
                         for (const r of structure.roles) {
                             try {
-                                const newRole = await guild.roles.create({ name: r.name, color: r.color || 'Random', reason: 'AI Gen' });
+                                const newRole = await guild.roles.create({
+                                    name: r.name,
+                                    color: r.color || 'Random',
+                                    hoist: true, // Show separately in sidebar
+                                    reason: 'AI Gen'
+                                });
                                 roleMap[r.name] = newRole.id;
                                 await addLog('✅', `Cargo "${r.name}" criado!`);
                             } catch (e) { }
@@ -1622,6 +1627,28 @@ line_gif -> Separador de linha colorido`;
 
                     await interaction.channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
                     await replyV2(interaction, { content: `${emojiCheckText} Painel de **Otimização** enviado com sucesso!`, color: 0x57F287 });
+                } else if (selected === 'fix_hierarchy') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+                    try {
+                        const roles = await interaction.guild.roles.fetch();
+                        let count = 0;
+                        for (const [, role] of roles) {
+                            if (!role.managed && role.name !== '@everyone' && !role.hoist) {
+                                try {
+                                    await role.edit({ hoist: true });
+                                    count++;
+                                } catch (e) { }
+                            }
+                        }
+                        await replyV2(interaction, {
+                            title: 'Hierarquia Organizada',
+                            content: `${emojiCheckText} **${count} cargos** foram configurados para aparecer separadamente na lateral!\n\nAgora o servidor seguirá a ordem de cargos do maior para o menor.`,
+                            color: 0x57F287
+                        });
+                    } catch (err) {
+                        await interaction.editReply({ content: '❌ Erro ao organizar cargos.' });
+                    }
                 }
                 return;
             }
