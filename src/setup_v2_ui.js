@@ -68,12 +68,13 @@ client.on('ready', async () => {
             const container = new ContainerBuilder().setAccentColor(0x512DA8)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(`# 💎 Tabela de Preços`),
-                    new TextDisplayBuilder().setContent(`Escolha o plano que melhor atende suas necessidades:\n\n` +
-                        `⚪ **Otimização Básica**: R$ 20,00 (Windows Lite & Cleanup)\n` +
-                        `🔵 **Turbo Economic**: R$ 55,90 (Foco em FPS & Estabilidade)\n` +
-                        `🟡 **Avançada**: R$ 79,90 (Full Tweaks + Network High-End)\n` +
-                        `🔴 **Pro & Streamer**: R$ 120,00 (Máximo Desempenho + OBS Setup)\n` +
-                        `💻 **Plus Notebook**: R$ 89,90 (Especial para Laptops & Temperatura)`)
+                    new TextDisplayBuilder().setContent(`Escolha o plano ideal para o seu perfil. Todos os serviços incluem suporte dedicado e garantia de satisfação.`),
+
+                    new TextDisplayBuilder().setContent(`### ⚪ Otimização Básica — R$ 20,00\n*Limpeza Leve & Windows Debloat*`),
+                    new TextDisplayBuilder().setContent(`### 🔵 Turbo Economic — R$ 55,90\n*Foco em FPS & Estabilidade para Jogos*`),
+                    new TextDisplayBuilder().setContent(`### 🟡 Otimização Avançada — R$ 79,90\n*Tweaks Completos + Otimização de Rede High-End*`),
+                    new TextDisplayBuilder().setContent(`### 🔴 Pro & Streamer — R$ 120,00\n*O Máximo que seu PC pode entregar + Configuração OBS*`),
+                    new TextDisplayBuilder().setContent(`### 💻 Plus Notebook — R$ 89,90\n*Otimização Térmica e de Bateria para Laptops*`)
                 );
             await chPreco.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
             console.log('Sent #preço-otimização');
