@@ -1778,12 +1778,13 @@ line_gif -> Separador de linha colorido`;
                 const welcomeContainer = new ContainerBuilder()
                     .setAccentColor(0x512DA8)
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`# ⚡ [SYSTEM] Protocolo Iniciado`),
-                        new TextDisplayBuilder().setContent(`Olá ${interaction.user.toString()}, a **Máquina** detectou sua solicitação de **${plan.name}**!\n\n` +
-                            `> ⏳ **Operação**: Um especialista da equipe foi notificado.\n` +
-                            `> 💳 **Pagamento**: Sinta-se à vontade para tirar dúvidas antes de realizar o pagamento.\n` +
-                            `> 📝 **Hardware**: Informe seu Processador e Placa de Vídeo abaixo.`),
-                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Staff Designada:**\n\`AGUARDANDO CONEXÃO...\``)
+                        new TextDisplayBuilder().setContent(`# 👋 Atendimento Iniciado`),
+                        new TextDisplayBuilder().setContent(`Olá ${interaction.user.toString()}, seu ticket de **${plan.name}** foi aberto com sucesso!\n\n` +
+                            `Nossa equipe já foi notificada e em breve um especialista irá te atender.\n\n` +
+                            `> 🚀 **Para agilizar:**\n` +
+                            `> Por favor, informe seu **Processador** e **Placa de Vídeo** enquanto aguarda.\n` +
+                            `> Se tiver dúvidas sobre o pagamento, pode perguntar aqui mesmo.`),
+                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Status do Atendimento:**\n\`Aguardando Staff...\``)
                     );
 
                 const innerMenu = new StringSelectMenuBuilder().setCustomId('ticket_inner_options').setPlaceholder('Selecione um painel')
