@@ -1,7 +1,7 @@
 {
-    "name": "orbyon-welcome-bot",
+    "name": "discord-cloud-bot",
     "version": "1.0.0",
-    "description": "Bot de boas-vindas com Components V2",
+    "description": "Bot Discord Otimizado para Cloud (ShardCloud)",
     "main": "src/index.js",
     "scripts": {
         "start": "node src/index.js",

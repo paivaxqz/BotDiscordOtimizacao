@@ -38,7 +38,7 @@ async function setupTicketSystem(client, channelId) {
         let logoFile = null;
         if (fs.existsSync(assetsPath)) {
             const files = fs.readdirSync(assetsPath);
-            const found = files.find(f => f.toLowerCase().includes('logo') || f.toLowerCase().includes('orbyon'));
+            const found = files.find(f => f.toLowerCase().includes('logo'));
             if (found) logoFile = new AttachmentBuilder(path.join(assetsPath, found), { name: 'logo.png' });
             else {
                 const pngs = files.filter(f => f.endsWith('.png'));
