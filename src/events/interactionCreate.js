@@ -1790,7 +1790,7 @@ line_gif -> Separador de linha colorido`;
                             `> 🚀 **Para agilizar:**\n` +
                             `> Por favor, informe seu **Processador** e **Placa de Vídeo** enquanto aguarda.\n` +
                             `> Se tiver dúvidas sobre o pagamento, pode perguntar aqui mesmo.`),
-                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Status do Atendimento:**\n\`Aguardando Staff...\``)
+                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Especialista:**\n\`Aguardando ser assumido...\``)
                     );
                 } else {
                     welcomeContainer.addTextDisplayComponents(
@@ -1799,7 +1799,7 @@ line_gif -> Separador de linha colorido`;
                             `Um membro da nossa equipe de suporte entrará em contato em breve.\n\n` +
                             `> 📝 **Como podemos ajudar?**\n` +
                             `> Por favor, descreva sua dúvida ou problema com o máximo de detalhes possível.`),
-                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Status:**\n\`Aguardando Staff...\``)
+                        new TextDisplayBuilder().setContent(`${emojiMemberText} **Status:**\n\`Aguardando Suporte...\``)
                     );
                 }
 
@@ -2174,7 +2174,7 @@ line_gif -> Separador de linha colorido`;
                             new TextDisplayBuilder().setContent(`${emojiBellText} | Olá ${originalMsg.mentions.users.first() ? originalMsg.mentions.users.first().toString() : 'Usuário'}! Seja bem-vindo(a) ao seu ticket.`),
                             new TextDisplayBuilder().setContent(`⚡ | Os **TICKETS** são totalmente privados...`),
                             new TextDisplayBuilder().setContent(`🚨 | Evite **MARCAÇÕES**. Aguarde até que um **STAFF** te atenda.`),
-                            new TextDisplayBuilder().setContent(`${emojiMemberText} | Staff que assumiu o ticket ${interaction.user.toString()}`)
+                            new TextDisplayBuilder().setContent(`${emojiMemberText} | **Responsável:** ${interaction.user.toString()}`)
                         );
 
                     const innerMenu = new StringSelectMenuBuilder().setCustomId('ticket_inner_options').setPlaceholder('Selecione um painel')
