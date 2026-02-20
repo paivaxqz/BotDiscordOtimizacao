@@ -2,7 +2,7 @@
     "auto_role_id": "1468167379123961876",
     "staff_role_id": "1468930328394465371",
     "ticket_category_id": null,
-    "logs_channel_id": "1468929977838866502",
+    "logs_channel_id": "1474510268829794516",
     "sales_channel_id": "1468929977838866502",
     "users": {
         "1433973291063840809": {
@@ -15,7 +15,7 @@
             ]
         }
     },
-    "ticket_count": 17,
+    "ticket_count": 20,
     "guilds": {
         "1471279007571116106": {
             "ticket_channel_id": "1471552599952982017",

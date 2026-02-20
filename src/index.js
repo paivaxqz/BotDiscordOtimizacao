@@ -31,6 +31,15 @@ if (fs.existsSync(eventsPath)) {
     console.warn("Pasta 'events' não encontrada.");
 }
 
+// Anti-Raid System (Manual)
+const antiRaidEvent = require('./anti_raid');
+const antiRaid = antiRaidEvent.antiRaid;
+
+// Apenas o evento de member leave para tickets (anti-raid manual)
+client.on('guildMemberRemove', (member) => antiRaid.handleMemberLeave(member));
+
+console.log("[ANTI-RAID] Sistema anti-raid em modo manual. Use /antiraid para ativar/desativar.");
+
 
 client.invites = new Collection();
 

@@ -5,20 +5,30 @@ const {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-    RoleSelectMenuBuilder,
-    ChannelSelectMenuBuilder,
+    ComponentType,
+    EmbedBuilder,
+    GatewayIntentBits,
+    GuildMember,
+    MessageFlags,
+    ModalBuilder,
+    SlashCommandBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
-    UserSelectMenuBuilder,
-    ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
-    ContainerBuilder,
-    TextDisplayBuilder,
-    MessageFlags,
+    REST,
+    Routes,
+    Collection,
+    Client,
+    IntentsBitField,
+    Partials,
+    ActivityType,
+    PresenceUpdateStatus,
     AttachmentBuilder,
-    MediaGalleryBuilder,
-    MediaGalleryItemBuilder
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    EmojiDisplayBuilder
 } = require('discord.js');
 const db = require('../database'); // Import Database
 const { generateServerStructure } = require('../ai_server_gen.js'); // Import AI Module
@@ -664,6 +674,164 @@ module.exports = {
                 }
 
 
+                // --- COMANDO /SETUP_TICKETS ---
+                if (interaction.commandName === 'setup_tickets') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                    
+                    try {
+                        const { setupTicketSystem } = require('../setup_ticket');
+                        const success = await setupTicketSystem(interaction.client, interaction.channel.id);
+                        
+                        if (success) {
+                            await interaction.editReply({ 
+                                content: '✅ Sistema de tickets configurado com sucesso neste canal!' 
+                            });
+                        } else {
+                            await interaction.editReply({ 
+                                content: '❌ Erro ao configurar sistema de tickets.' 
+                            });
+                        }
+                    } catch (error) {
+                        console.error('[SETUP_TICKETS] Erro:', error);
+                        await interaction.editReply({ 
+                            content: '❌ Erro ao configurar sistema de tickets.' 
+                        });
+                    }
+                    return;
+                }
+
+                // --- COMANDO /LIMPAR ---
+                if (interaction.commandName === 'limpar') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                    
+                    const quantidade = interaction.options.getInteger('quantidade');
+                    
+                    if (quantidade < 1 || quantidade > 100) {
+                        await interaction.editReply({ 
+                            content: '❌ Quantidade deve ser entre 1 e 100 mensagens.' 
+                        });
+                        return;
+                    }
+                    
+                    try {
+                        const messages = await interaction.channel.messages.fetch({ limit: quantidade + 1 });
+                        const messagesToDelete = messages.filter(m => !m.interaction || m.interaction.commandName !== 'limpar');
+                        
+                        if (messagesToDelete.size > 0) {
+                            await interaction.channel.bulkDelete(messagesToDelete);
+                            await interaction.editReply({ 
+                                content: `✅ ${messagesToDelete.size} mensagens deletadas.` 
+                            });
+                        } else {
+                            await interaction.editReply({ 
+                                content: '❌ Nenhuma mensagem para deletar.' 
+                            });
+                        }
+                    } catch (error) {
+                        console.error('[LIMPAR] Erro:', error);
+                        await interaction.editReply({ 
+                            content: '❌ Erro ao deletar mensagens.' 
+                        });
+                    }
+                    return;
+                }
+
+                // --- COMANDO /ANTIRAID ---
+                if (interaction.commandName === 'antiraid') {
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                    
+                    const acao = interaction.options.getString('acao');
+                    const antiRaid = require('../anti_raid').antiRaid;
+                    
+                    try {
+                        if (acao === 'ativar') {
+                            // Ativar eventos anti-raid
+                            const client = interaction.client;
+                            
+                            // Verificar se já está ativo
+                            if (client.antiRaidActive) {
+                                await interaction.editReply({ 
+                                    content: '⚠️ O sistema anti-raid já está **ativo**!' 
+                                });
+                                return;
+                            }
+                            
+                            // Ativar eventos
+                            client.on('guildMemberAdd', (member) => antiRaid.handleMemberJoin(member));
+                            client.on('channelCreate', (channel) => antiRaid.handleChannelCreation(channel));
+                            client.on('channelDelete', (channel) => antiRaid.handleChannelDeletion(channel));
+                            
+                            client.antiRaidActive = true;
+                            
+                            await interaction.editReply({ 
+                                content: '✅ Sistema anti-raid **ATIVADO** com sucesso!\n\n🛡️ **Proteções ativas:**\n• Detecção de mass joins\n• Detecção de criação/exclusão de canais\n• Lockdown automático em raids' 
+                            });
+                            
+                        } else if (acao === 'desativar') {
+                            // Desativar eventos anti-raid
+                            const client = interaction.client;
+                            
+                            // Verificar se já está inativo
+                            if (!client.antiRaidActive) {
+                                await interaction.editReply({ 
+                                    content: '⚠️ O sistema anti-raid já está **inativo**!' 
+                                });
+                                return;
+                            }
+                            
+                            // Remover listeners
+                            client.removeAllListeners('guildMemberAdd');
+                            client.removeAllListeners('channelCreate');
+                            client.removeAllListeners('channelDelete');
+                            
+                            // Re-adicionar o evento de member leave para tickets
+                            client.on('guildMemberRemove', (member) => antiRaid.handleMemberLeave(member));
+                            
+                            client.antiRaidActive = false;
+                            
+                            await interaction.editReply({ 
+                                content: '❌ Sistema anti-raid **DESATIVADO** com sucesso!\n\n⚠️ **Proteções removidas:**\n• Detecção de mass joins\n• Detecção de criação/exclusão de canais\n• Lockdown automático\n\n📝 Apenas o sistema de tickets permanece ativo.' 
+                            });
+                        }
+                    } catch (error) {
+                        console.error('[ANTIRAID] Erro:', error);
+                        await interaction.editReply({ 
+                            content: '❌ Erro ao configurar sistema anti-raid.' 
+                        });
+                    }
+                    return;
+                }
+
+                // --- COMANDO /CRIAREMBED ---
+                if (interaction.commandName === 'criarembed') {
+                    // Mostrar modal para criar embed
+                    const modal = new ModalBuilder()
+                        .setCustomId('modal_criarembed')
+                        .setTitle('Criar Embed Personalizada');
+                    
+                    modal.addComponents(
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('embed_titulo')
+                                .setLabel('Título da Embed')
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(true)
+                                .setPlaceholder('Digite o título aqui...')
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('embed_descricao')
+                                .setLabel('Descrição da Embed')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                                .setPlaceholder('Digite a descrição aqui...')
+                        )
+                    );
+                    
+                    await interaction.showModal(modal);
+                    return;
+                }
+
                 // --- COMANDO /APROVARPAGAMENTO (REMOVED - MOVED TO PREFIX +aprovar) ---
             }
 
@@ -759,16 +927,10 @@ module.exports = {
                             .addTextDisplayComponents(
                                 new TextDisplayBuilder().setContent(`# 🚀 Performance Showcase`),
                                 new TextDisplayBuilder().setContent(`**Snapshot de Feedback de:** ${cliente.toString()}`),
-                                new TextDisplayBuilder().setContent(`> **“** ${recado} **”**`),
+                                new TextDisplayBuilder().setContent(`> **"** ${recado} **"**`),
                                 new TextDisplayBuilder().setContent(`\n**📊 Especificações Técnicas**\n\`${pcConfig}\``),
                                 new TextDisplayBuilder().setContent(`**⚡ Ganho Constatado**\n\*(Identificado nas prints)*`)
                             );
-
-                        const mediaGallery = new MediaGalleryBuilder().addItems(
-                            new MediaGalleryItemBuilder().setURL('attachment://antes.png'),
-                            new MediaGalleryItemBuilder().setURL('attachment://depois.png')
-                        );
-                        container.addMediaGalleryComponents(mediaGallery);
 
                         await resultsChannel.send({
                             flags: MessageFlags.IsComponentsV2,
@@ -784,53 +946,11 @@ module.exports = {
                         } catch (innerError) {
                             console.error("Erro no editReply de sucesso:", innerError);
                         }
-
-                    } catch (e) {
-                        console.error("Erro no Context Menu Smart-Post:", e);
-                        await interaction.editReply({ content: '❌ Erro ao enviar resultado. Verifique as prints e o canal.' });
+                    } catch (error) {
+                        console.error("Erro ao postar resultado:", error);
+                        await interaction.editReply({ content: '❌ Erro ao postar resultado.' });
                     }
-                }
-            }
-
-            if (interaction.isModalSubmit()) {
-                // --- CLIENT FEEDBACK MODAL (V15) ---
-                if (interaction.customId === 'modal_client_details') {
-                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-                    const config = interaction.fields.getTextInputValue('cl_config');
-                    const fpsGain = interaction.fields.getTextInputValue('cl_fps');
-                    const recado = interaction.fields.getTextInputValue('cl_recado');
-
-                    // Save to DB (Persistent)
-                    db.setGuild(interaction.guild.id, `feedback_${interaction.user.id}`, {
-                        config,
-                        fpsGain,
-                        recado,
-                        timestamp: Date.now()
-                    });
-
-                    await interaction.editReply({ content: '✅ **Detalhes salvos com sucesso!**\nA equipe usará essas informações para postar seu resultado em breve. Obrigado!' });
                     return;
-                }
-                // --- EMBED CONTROLLER (DIRECT SEND) ---
-                if (interaction.customId === 'modal_embed_create') {
-                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-                    const title = interaction.fields.getTextInputValue('input_title');
-                    const content = interaction.fields.getTextInputValue('input_content');
-                    const colorInput = interaction.fields.getTextInputValue('input_color').replace('#', '');
-                    const color = parseInt(colorInput, 16) || 0x2B2D31;
-
-                    // 1. Build & Send IMMEDIATELY
-                    const container = new ContainerBuilder().setAccentColor(color);
-                    if (title) container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${title}**`));
-                    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
-
-                    const sentMsg = await interaction.channel.send({
-                        flags: MessageFlags.IsComponentsV2,
-                        components: [container]
-                    });
-
-                    // 2. Store Context (User -> Active Message)
                     embedDrafts.set(interaction.user.id, {
                         msgId: sentMsg.id,
                         channelId: sentMsg.channelId,
@@ -942,6 +1062,64 @@ module.exports = {
             // =========================================================================
             //                         BUTTONS & MENUS
             // =========================================================================
+
+            // --- MODAL HANDLERS ---
+            if (interaction.customId === 'modal_criarembed') {
+                console.log('[DEBUG] Modal criarembed recebido!');
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                
+                const titulo = interaction.fields.getTextInputValue('embed_titulo');
+                const descricao = interaction.fields.getTextInputValue('embed_descricao');
+                
+                console.log(`[DEBUG] Título: ${titulo}, Descrição: ${descricao}`);
+                
+                // Sempre vermelho forte
+                const cor = 0xFF0000;
+                
+                // Criar embed com Components V2
+                const embedContainer = new ContainerBuilder()
+                    .setAccentColor(cor)
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`# ${titulo}`),
+                        new TextDisplayBuilder().setContent(descricao)
+                    );
+                
+                // Enviar embed para o canal
+                const sentMsg = await interaction.channel.send({
+                    flags: MessageFlags.IsComponentsV2,
+                    components: [embedContainer]
+                });
+                
+                // Salvar contexto para adicionar botões depois
+                embedDrafts.set(interaction.user.id, {
+                    msgId: sentMsg.id,
+                    channelId: sentMsg.channelId,
+                    color: cor,
+                    title: titulo,
+                    description: descricao,
+                    buttons: []
+                });
+                
+                // Perguntar se quer adicionar botão
+                const buttonRow = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('embed_add_button')
+                        .setLabel('Adicionar Botão')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('➕'),
+                    new ButtonBuilder()
+                        .setCustomId('embed_finish')
+                        .setLabel('Finalizar')
+                        .setStyle(ButtonStyle.Success)
+                        .setEmoji('✅')
+                );
+                
+                await interaction.editReply({
+                    content: '✅ **Embed criada com sucesso!**\n\nDeseja adicionar algum botão?',
+                    components: [buttonRow]
+                });
+                return;
+            }
 
             // SERVER GEN (AI) HANDLERS
             if (interaction.customId === 'ai_cancel_gen') {
@@ -1585,48 +1763,31 @@ line_gif -> Separador de linha colorido`;
 
                     await interaction.editReply({ components: [container, editButtons, imageButtons], flags: MessageFlags.IsComponentsV2 });
                 } else if (selected === 'send_ticket_panel') {
-                    // --- ORBYON PAY DESIGN (MATCHING SETUP_TICKET.JS) ---
-                    const container = new ContainerBuilder()
-                        .setAccentColor(0x512DA8) // Deep Purple for premium feel
-                        .addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(`# ⚡ Orbyon Optimizer — Planos & Preços`),
-                            new TextDisplayBuilder().setContent(`Escolha a solução ideal para o seu computador e domine seus jogos com performance máxima.\n\n` +
-                                `⚪ **Otimização Básica**: R$ 20,00\n` +
-                                `> Limpeza de arquivos temporários, otimização de disco e debloat essencial do Windows.\n\n` +
-                                `🔵 **Turbo Economic**: R$ 55,90\n` +
-                                `> Melhora de latência, otimização de registros e ajustes básicos de rede + Plano Básico.\n\n` +
-                                `🟡 **Otimização Avançada**: R$ 79,90\n` +
-                                `> Overclock seguro, ajustes de energia ultra e priorização de processos + Plano Turbo.\n\n` +
-                                `🔴 **Pro & Streamer**: R$ 120,00\n` +
-                                `> Configuração completa de OBS, áudio, rede avançada e input lag zero. Atendimento VIP.\n\n` +
-                                `💻 **Plus Notebook**: R$ 89,90\n` +
-                                `> Foco total em temperatura e eficiência energética para notebooks gamers.`)
-                        );
-
-                    const select = new StringSelectMenuBuilder()
-                        .setCustomId('ticket_category')
-                        .setPlaceholder('Escolha o seu plano de Otimização')
-                        .addOptions(
-                            new StringSelectMenuOptionBuilder().setLabel('Otimização Básica').setDescription('Windows R$ 20,00').setValue('opt_basic').setEmoji('⚪'),
-                            new StringSelectMenuOptionBuilder().setLabel('Otimização Turbo Economic').setDescription('Windows R$ 55,90').setValue('opt_turbo').setEmoji('🔵'),
-                            new StringSelectMenuOptionBuilder().setLabel('Otimização Avançada').setDescription('Windows R$ 79,90').setValue('opt_advanced').setEmoji('🟡'),
-                            new StringSelectMenuOptionBuilder().setLabel('Otimização Pro & Streamer').setDescription('Windows R$ 120,00').setValue('opt_pro').setEmoji('🔴'),
-                            new StringSelectMenuOptionBuilder().setLabel('Otimização Plus para Notebook').setDescription('Windows R$ 89,90').setValue('opt_notebook').setEmoji('💻')
-                        );
-
-                    const rowLinks = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder().setLabel('Site').setStyle(ButtonStyle.Link).setURL('https://google.com').setEmoji('🌐'),
-                        new ButtonBuilder().setLabel('Comunidade').setStyle(ButtonStyle.Link).setURL('https://discord.gg/exemplo').setEmoji('💬'),
-                        new ButtonBuilder().setLabel('Dashboard').setStyle(ButtonStyle.Link).setURL('https://google.com').setEmoji('🔗')
-                    );
-
-                    // Add everything to container logic? 
-                    // V2 allows ActionRows INSIDE or attached. setup_ticket.js adds them to payload directly or container?
-                    // setup_ticket.js: container.addActionRowComponents(rowDropdown, rowLinks);
-                    container.addActionRowComponents(new ActionRowBuilder().addComponents(select), rowLinks);
-
-                    await interaction.channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
-                    await replyV2(interaction, { content: `${emojiCheckText} Painel de **Otimização** enviado com sucesso!`, color: 0x57F287 });
+                    // --- SISTEMA DE TICKETS CORRETO ---
+                    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                    
+                    try {
+                        const { setupTicketSystem } = require('../setup_ticket');
+                        const success = await setupTicketSystem(interaction.client, interaction.channel.id);
+                        
+                        if (success) {
+                            await replyV2(interaction, { 
+                                content: `${emojiCheckText} Painel de **Tickets** enviado com sucesso!`, 
+                                color: 0x57F287 
+                            });
+                        } else {
+                            await replyV2(interaction, { 
+                                content: `${emojiErrorText} Erro ao enviar painel de tickets.`, 
+                                color: 0xED4245 
+                            });
+                        }
+                    } catch (error) {
+                        console.error('[SEND_TICKET_PANEL] Erro:', error);
+                        await replyV2(interaction, { 
+                            content: `${emojiErrorText} Erro ao configurar sistema de tickets.`, 
+                            color: 0xED4245 
+                        });
+                    }
                 } else if (selected === 'fix_hierarchy') {
                     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
@@ -1747,16 +1908,81 @@ line_gif -> Separador de linha colorido`;
                 await interaction.reply({ content: '✅ Imagens atualizadas e salvas!', ephemeral: true });
             }
 
+            // --- MODAL CRIAR EMBED ---
+            if (interaction.customId === 'modal_criarembed') {
+                console.log('[DEBUG] Modal criarembed recebido!');
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                
+                const titulo = interaction.fields.getTextInputValue('embed_titulo');
+                const descricao = interaction.fields.getTextInputValue('embed_descricao');
+                
+                console.log(`[DEBUG] Título: ${titulo}, Descrição: ${descricao}`);
+                
+                // Sempre vermelho forte
+                const cor = 0xFF0000;
+                
+                // Criar embed com Components V2
+                const embedContainer = new ContainerBuilder()
+                    .setAccentColor(cor)
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`# ${titulo}`),
+                        new TextDisplayBuilder().setContent(descricao)
+                    );
+                
+                // Enviar embed para o canal
+                const sentMsg = await interaction.channel.send({
+                    flags: MessageFlags.IsComponentsV2,
+                    components: [embedContainer]
+                });
+                
+                // Salvar contexto para adicionar botões depois
+                embedDrafts.set(interaction.user.id, {
+                    msgId: sentMsg.id,
+                    channelId: sentMsg.channelId,
+                    color: cor,
+                    title: titulo,
+                    description: descricao,
+                    buttons: []
+                });
+                
+                // Perguntar se quer adicionar botão
+                const buttonRow = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('embed_add_button')
+                        .setLabel('Adicionar Botão')
+                        .setStyle(ButtonStyle.Secondary)
+                        .setEmoji('➕'),
+                    new ButtonBuilder()
+                        .setCustomId('embed_finish')
+                        .setLabel('Finalizar')
+                        .setStyle(ButtonStyle.Success)
+                        .setEmoji('✅')
+                );
+                
+                await interaction.editReply({
+                    content: '✅ **Embed criada com sucesso!**\n\nDeseja adicionar algum botão?',
+                    components: [buttonRow]
+                });
+                return;
+            }
 
-
-            // --- TICKET LOGIC (EXISTING) ---
-
-            // --- 1. CRIAR TICKET ---
-            if (interaction.customId === 'ticket_category') {
+            // --- HANDLERS DOS BOTÕES DE TICKET ---
+            if (interaction.customId === 'ticket_buy' || 
+                interaction.customId === 'ticket_reinstall' || 
+                interaction.customId === 'ticket_doubts') {
                 console.log(`[DEBUG] Iniciando criação de ticket para ${interaction.user.tag}...`);
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-                const categoryValue = interaction.values[0];
+                let categoryValue;
+                if (interaction.customId === 'ticket_buy') {
+                    categoryValue = 'buy';
+                } else if (interaction.customId === 'ticket_reinstall') {
+                    categoryValue = 'reinstall';
+                } else if (interaction.customId === 'ticket_doubts') {
+                    categoryValue = 'doubts';
+                } else {
+                    categoryValue = interaction.values[0];
+                }
                 console.log(`[DEBUG] Categoria selecionada: ${categoryValue}`);
 
                 // --- 1.1 CONFIGURAÇÕES INICIAIS ---
@@ -1780,7 +2006,10 @@ line_gif -> Separador de linha colorido`;
                     'tech_support': { name: 'Suporte Técnico', price: 0, short: 'suporte' },
                     'finance': { name: 'Financeiro', price: 0, short: 'financeiro' },
                     'general': { name: 'Dúvidas Gerais', price: 0, short: 'duvidas' },
-                    'report': { name: 'Denúncia', price: 0, short: 'denuncia' }
+                    'report': { name: 'Denúncia', price: 0, short: 'denuncia' },
+                    'buy': { name: 'Compra', price: 0, short: 'compra' },
+                    'reinstall': { name: 'Reinstalação', price: 0, short: 'reinstall' },
+                    'doubts': { name: 'Dúvidas', price: 0, short: 'duvidas' }
                 };
                 const plan = planMap[categoryValue] || planMap['opt_support'];
                 const channelName = `${plan.short}-${interaction.user.username}`.toLowerCase().slice(0, 32);
@@ -1793,10 +2022,22 @@ line_gif -> Separador de linha colorido`;
 
                 let ticketChannel;
                 try {
+                    // Usar IDs das categorias fornecidas
+                    let categoryId = null;
+                    if (categoryValue === 'buy') {
+                        categoryId = '1474525470648303656';
+                    } else if (categoryValue === 'reinstall') {
+                        categoryId = '1474525474180038978';
+                    } else if (categoryValue === 'doubts') {
+                        categoryId = '1474525475840856114';
+                    } else {
+                        categoryId = interaction.channel.parentId;
+                    }
+
                     ticketChannel = await interaction.guild.channels.create({
                         name: channelName,
                         type: ChannelType.GuildText,
-                        parent: interaction.channel.parentId,
+                        parent: categoryId,
                         topic: `Ticket de ${interaction.user.id} | Plano: ${plan.name}`,
                         permissionOverwrites: permissionOverwrites
                     });
@@ -2234,8 +2475,136 @@ line_gif -> Separador de linha colorido`;
             }
 
             if (interaction.customId === 'ticket_close') {
-                await interaction.reply({ content: '🔒 Fechando...', flags: MessageFlags.Ephemeral });
-                setTimeout(() => interaction.channel.delete().catch(() => { }), 3000);
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                
+                // Criar embed bonita de fechamento
+                const closeEmbed = {
+                    title: '🎫 Ticket Encerrado',
+                    description: `Este ticket foi encerrado por ${interaction.user.toString()}.\n\nObrigado por utilizar nosso sistema de suporte!`,
+                    color: 0xFF0000,
+                    fields: [
+                        {
+                            name: '📊 Resumo',
+                            value: `• **Atendido por:** ${interaction.user.username}\n• **Encerrado em:** ${new Date().toLocaleDateString('pt-BR')}\n• **Canal:** ${interaction.channel.name}`,
+                            inline: false
+                        },
+                        {
+                            name: '💡 Avaliação',
+                            value: 'Caso queira avaliar nosso atendimento, entre em contato com um administrador.',
+                            inline: false
+                        }
+                    ],
+                    footer: {
+                        text: 'Sistema de Tickets • VsBypass',
+                        icon_url: interaction.client.user.displayAvatarURL()
+                    },
+                    timestamp: new Date().toISOString()
+                };
+
+                await interaction.channel.send({ embeds: [closeEmbed] });
+                
+                // Esperar 5 segundos antes de deletar
+                setTimeout(async () => {
+                    try {
+                        await interaction.channel.delete('Ticket encerrado automaticamente');
+                    } catch (error) {
+                        console.error('[TICKET] Erro ao deletar canal:', error);
+                    }
+                }, 5000);
+
+                await interaction.editReply({ content: '✅ Ticket será encerrado em 5 segundos...' });
+            }
+
+            // --- HANDLERS DOS BOTÕES DE EMBED ---
+            if (interaction.customId === 'embed_add_button') {
+                // Mostrar modal para adicionar botão
+                const modal = new ModalBuilder()
+                    .setCustomId('modal_add_button')
+                    .setTitle('Adicionar Botão à Embed');
+                
+                modal.addComponents(
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('btn_emoji')
+                            .setLabel('Emoji (opcional)')
+                            .setStyle(TextInputStyle.Short)
+                            .setRequired(false)
+                            .setPlaceholder('Digite o emoji ou deixe em branco')
+                    ),
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('btn_title')
+                            .setLabel('Título do Botão')
+                            .setStyle(TextInputStyle.Short)
+                            .setRequired(true)
+                            .setPlaceholder('Digite o título do botão')
+                    ),
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId('btn_url')
+                            .setLabel('URL do Botão')
+                            .setStyle(TextInputStyle.Short)
+                            .setRequired(true)
+                            .setPlaceholder('https://exemplo.com')
+                    )
+                );
+                
+                await interaction.showModal(modal);
+                return;
+            }
+
+            if (interaction.customId === 'embed_finish') {
+                await interaction.update({
+                    content: '✅ Embed finalizada com sucesso!',
+                    components: []
+                });
+                return;
+            }
+
+            // --- HANDLER DO MODAL DE ADICIONAR BOTÃO ---
+            if (interaction.customId === 'modal_add_button') {
+                await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+                
+                const emoji = interaction.fields.getTextInputValue('btn_emoji');
+                const title = interaction.fields.getTextInputValue('btn_title');
+                const url = interaction.fields.getTextInputValue('btn_url');
+                
+                const draft = embedDrafts.get(interaction.user.id);
+                if (!draft) {
+                    await interaction.editReply({ content: '❌ Sessão expirada!' });
+                    return;
+                }
+                
+                try {
+                    const msg = await interaction.channel.messages.fetch(draft.msgId);
+                    
+                    // Criar botão
+                    const button = new ButtonBuilder()
+                        .setLabel(title)
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(url);
+                    
+                    if (emoji) {
+                        button.setEmoji(emoji);
+                    }
+                    
+                    // Adicionar botão à embed
+                    const buttonRow = new ActionRowBuilder().addComponents(button);
+                    
+                    await msg.edit({
+                        components: [msg.components[0], buttonRow]
+                    });
+                    
+                    await interaction.editReply({ 
+                        content: `✅ Botão "${title}" adicionado com sucesso!`,
+                        components: []
+                    });
+                    
+                } catch (error) {
+                    console.error('[ADD_BUTTON] Erro:', error);
+                    await interaction.editReply({ content: '❌ Erro ao adicionar botão!' });
+                }
+                return;
             }
 
         } catch (error) {

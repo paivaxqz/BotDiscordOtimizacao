@@ -2,22 +2,15 @@ require('dotenv').config();
 const { REST, Routes, SlashCommandBuilder, PermissionFlagsBits, ContextMenuCommandBuilder, ApplicationCommandType } = require('discord.js');
 
 const commands = [
-    new SlashCommandBuilder()
-        .setName('botconfig')
-        .setDescription('Configurar o sistema do bot (AutoRole, Staff, Tickets)')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-    new SlashCommandBuilder()
-        .setName('embed')
-        .setDescription('Criar uma mensagem personalizada V2')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    // Comandos essenciais para servidor de hack
     new SlashCommandBuilder()
         .setName('registrar')
-        .setDescription('Registrar uma venda e setar perfil do cliente')
+        .setDescription('Registrar venda e dar cargo ao cliente')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-        .addUserOption(option => option.setName('cliente').setDescription('O cliente que comprou').setRequired(true))
+        .addUserOption(option => option.setName('cliente').setDescription('Cliente que comprou').setRequired(true))
         .addStringOption(option =>
             option.setName('produto')
-                .setDescription('Qual produto foi vendido')
+                .setDescription('Produto vendido')
                 .setRequired(true)
                 .addChoices(
                     { name: 'VS Bypass - Basic', value: 'VS Bypass (Basic)' },
@@ -27,7 +20,7 @@ const commands = [
         )
         .addStringOption(option =>
             option.setName('duracao')
-                .setDescription('Tempo do plano')
+                .setDescription('Duração do acesso')
                 .setRequired(true)
                 .addChoices(
                     { name: '7 Dias', value: '7 Dias' },
@@ -35,16 +28,15 @@ const commands = [
                     { name: 'Vitalício', value: 'Vitalício' }
                 )
         )
-        .addStringOption(option => option.setName('valor').setDescription('Valor da venda (Ex: 50,00)').setRequired(true))
-        .addAttachmentOption(option => option.setName('comprovante').setDescription('Print do pagamento (Arquivo)').setRequired(false))
-        .addStringOption(option => option.setName('link_comprovante').setDescription('Link do print (Imgur, Discord, etc)').setRequired(false)),
+        .addStringOption(option => option.setName('valor').setDescription('Valor pago').setRequired(true)),
+    
     new SlashCommandBuilder()
         .setName('gerarpix')
-        .setDescription('Gerar pagamento Pix Automático (MisticPay)')
+        .setDescription('Gerar QR Code Pix para pagamento')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .addStringOption(option =>
             option.setName('produto')
-                .setDescription('Selecione o Produto')
+                .setDescription('Produto')
                 .setRequired(true)
                 .addChoices(
                     { name: 'VS Bypass - Basic', value: 'VS Bypass (Basic)' },
@@ -52,33 +44,42 @@ const commands = [
                     { name: 'IOS Trick', value: 'IOS Trick' }
                 )
         )
-        .addStringOption(option => option.setName('valor').setDescription('Valor (Ex: 15,50 ou 15.50)').setRequired(true))
-        .addUserOption(option => option.setName('cliente').setDescription('Cliente que receberá o produto').setRequired(true)),
+        .addStringOption(option => option.setName('valor').setDescription('Valor (Ex: 15.50)').setRequired(true))
+        .addUserOption(option => option.setName('cliente').setDescription('Cliente').setRequired(true)),
+    
     new SlashCommandBuilder()
-        .setName('criarserver')
-        .setDescription('⚠️ DESTRÓI TUDO e cria um servidor novo com IA (Gemini)')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addStringOption(option => option.setName('tema').setDescription('O tema do servidor (Ex: RPG, Loja, Comunidade)').setRequired(true))
-        .addBooleanOption(option => option.setName('usar_emojis').setDescription('Usar emojis nos canais?').setRequired(true))
-        .addStringOption(option => option.setName('divisoria').setDescription('Símbolo divisória (Ex: | - » •)').setRequired(true)),
-    new SlashCommandBuilder()
-        .setName('editarembed')
-        .setDescription('Edita uma mensagem/embed do servidor (Regras, Anúncios, etc)')
+        .setName('botconfig')
+        .setDescription('Configurar cargos e canais do bot')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    
     new SlashCommandBuilder()
-        .setName('postar_resultado')
-        .setDescription('Postar o resultado Antes x Depois de uma otimização')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-        .addUserOption(option => option.setName('cliente').setDescription('O cliente da otimização').setRequired(true))
-        .addAttachmentOption(option => option.setName('depois_print').setDescription('A print de DEPOIS da otimização').setRequired(true)),
+        .setName('setup_tickets')
+        .setDescription('Criar painel de tickets no canal atual')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    
     new SlashCommandBuilder()
-        .setName('aprovarpagamento')
-        .setDescription('Aprovar pagamento manualmente e disparar fluxo de hardware')
+        .setName('limpar')
+        .setDescription('Limpar mensagens do canal')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
-        .addUserOption(option => option.setName('cliente').setDescription('O cliente que realizou o pagamento').setRequired(true)),
-    new ContextMenuCommandBuilder()
-        .setName('Postar Resultado')
-        .setType(ApplicationCommandType.Message)
+        .addIntegerOption(option => option.setName('quantidade').setDescription('Número de mensagens (1-100)').setRequired(true)),
+    
+    new SlashCommandBuilder()
+        .setName('antiraid')
+        .setDescription('Ativar ou desativar o sistema anti-raid')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addStringOption(option =>
+            option.setName('acao')
+                .setDescription('Escolha uma ação')
+                .setRequired(true)
+                .addChoices(
+                    { name: 'Ativar', value: 'ativar' },
+                    { name: 'Desativar', value: 'desativar' }
+                )
+        ),
+    
+    new SlashCommandBuilder()
+        .setName('criarembed')
+        .setDescription('Criar uma embed personalizada com modal')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 ].map(command => command.toJSON());
 

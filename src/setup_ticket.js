@@ -48,13 +48,11 @@ async function setupTicketSystem(client, channelId) {
 
         // 2. Texto
         const titleText = new TextDisplayBuilder()
-            .setContent(`# Atendimento - Suporte Oficial`);
+            .setContent(`# Sistema de Tickets - Support`);
 
         const descriptionText = new TextDisplayBuilder()
-            .setContent(`Seja bem-vindo(a) ao sistema de atendimento! Aqui você pode falar diretamente com nossa equipe.\n\n` +
-                `☑️ Forneça o máximo de detalhes possíveis.\n` +
-                `☑️ Não contate a equipe no privado.\n` +
-                `☑️ Aguarde o atendimento ser iniciado.`);
+            .setContent(`Ticket é um canal privado entre você e os Staffs. Nele, você pode tirar dúvidas sobre os produtos, solicitar instalação, receber produtos comprados, etc... Todo nosso atendimento é feito por aqui, não atendemos no privado.\n\n` +
+                `Seja objetivo na sua dúvida ou no motivo de abertura, caso o ticket seja aberto e nenhuma mensagem for enviada, ele será deletado.`);
 
         // Helper para achar emoji
         const getEmoji = (name, fallback) => {
@@ -62,24 +60,32 @@ async function setupTicketSystem(client, channelId) {
             return emoji ? emoji.toString() : fallback;
         };
 
-        // 3. Dropdown
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId('ticket_category')
-            .setPlaceholder('Escolha uma categoria')
-            .addOptions(
-                new StringSelectMenuOptionBuilder().setLabel('Suporte Técnico').setValue('tech_support').setEmoji('🛠️'),
-                new StringSelectMenuOptionBuilder().setLabel('Financeiro').setValue('finance').setEmoji('💲'),
-                new StringSelectMenuOptionBuilder().setLabel('Dúvidas Gerais').setValue('general').setEmoji('❓'),
-                new StringSelectMenuOptionBuilder().setLabel('Denúncias').setValue('report').setEmoji('🚨')
-            );
+        // 3. Botões
+        const buyButton = new ButtonBuilder()
+            .setCustomId('ticket_buy')
+            .setLabel('Buy')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('1474517093650268473');
 
-        const rowDropdown = new ActionRowBuilder().addComponents(selectMenu);
+        const reinstallButton = new ButtonBuilder()
+            .setCustomId('ticket_reinstall')
+            .setLabel('Reinstall')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('1474512441600774174');
+
+        const doubtsButton = new ButtonBuilder()
+            .setCustomId('ticket_doubts')
+            .setLabel('Dúvidas')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('1457935131892383776');
+
+        const rowButtons = new ActionRowBuilder().addComponents(buyButton, reinstallButton, doubtsButton);
 
         // 4. Container
         const container = new ContainerBuilder()
-            .setAccentColor(0x5865F2)
+            .setAccentColor(0xFF0000)
             .addTextDisplayComponents(titleText, descriptionText)
-            .addActionRowComponents(rowDropdown);
+            .addActionRowComponents(rowButtons);
 
         const payload = {
             flags: MessageFlags.IsComponentsV2,
@@ -96,6 +102,50 @@ async function setupTicketSystem(client, channelId) {
     } catch (error) {
         console.error("[SETUP] Erro:", error);
         return false;
+    }
+}
+
+async function createTicketCategories(guild) {
+    try {
+        const categories = [
+            { name: '🛒 BUY', description: 'Tickets de compras' },
+            { name: '🔧 REINSTALL', description: 'Tickets de reinstalação' },
+            { name: '❓ DÚVIDAS', description: 'Tickets de suporte' }
+        ];
+
+        for (const cat of categories) {
+            // Verifica se categoria já existe
+            const existingCategory = guild.channels.cache.find(c => 
+                c.name === cat.name && c.type === 4 // 4 = Category
+            );
+
+            if (!existingCategory) {
+                // Pega a posição do canal de tickets atual como referência
+                const ticketChannel = guild.channels.cache.find(c => c.name.toLowerCase().includes('ticket'));
+                const position = ticketChannel ? ticketChannel.position : 0;
+
+                await guild.channels.create({
+                    name: cat.name,
+                    type: 4, // Category
+                    position: position + 1,
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            deny: ['ViewChannel']
+                        },
+                        {
+                            id: guild.client.user.id,
+                            allow: ['ViewChannel', 'SendMessages', 'ManageChannels']
+                        }
+                    ]
+                });
+                console.log(`[SETUP] Categoria '${cat.name}' criada com sucesso!`);
+            } else {
+                console.log(`[SETUP] Categoria '${cat.name}' já existe.`);
+            }
+        }
+    } catch (error) {
+        console.error('[SETUP] Erro ao criar categorias:', error);
     }
 }
 
